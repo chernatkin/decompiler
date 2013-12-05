@@ -147,20 +147,46 @@ public class DecompileMethodVisitor extends InstructionAdapter {
 
 	@Override
 	public void dupX2() {
-		// TODO Auto-generated method stub
-		super.dupX2();
+		method.body().directStatement("//dupX2");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		if(value2.getType().equals(Long.class) || value2.getType().equals(Double.class)){
+			stack.push(value1);
+			stack.push(value2);
+			stack.push(value1);
+		}
+		else{
+			final StackElement value3 = stack.pop();
+			stack.push(value1);
+			stack.push(value3);
+			stack.push(value2);
+			stack.push(value1);
+		}
 	}
 
 	@Override
 	public void dup2X1() {
-		// TODO Auto-generated method stub
-		super.dup2X1();
+		method.body().directStatement("//dup2X1");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		if(value1.getType().equals(Long.class) || value1.getType().equals(Double.class)){
+			stack.push(value1);
+			stack.push(value2);
+			stack.push(value1);
+		}
+		else{
+			final StackElement value3 = stack.pop();
+			stack.push(value2);
+			stack.push(value1);
+			stack.push(value3);
+			stack.push(value2);
+			stack.push(value1);
+		}
 	}
 
 	@Override
 	public void dup2X2() {
-		// TODO Auto-generated method stub
-		super.dup2X2();
+		
 	}
 
 	@Override
