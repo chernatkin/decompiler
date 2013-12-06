@@ -1,17 +1,15 @@
 package org.chernatkin.decompiler;
 
+import com.sun.codemodel.JMethod;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
-
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
-
-import com.sun.codemodel.JMethod;
 
 public class DecompileMethodVisitor extends InstructionAdapter {
 
@@ -547,7 +545,5 @@ public class DecompileMethodVisitor extends InstructionAdapter {
 	public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
 		method.body().directStatement("//frame type: " + type + ", nlocal: " + nLocal + ", local: " + Arrays.toString(local) + ", nStack: " + nStack + ", stack: " + Arrays.toString(stack));
 	}
-
-	
 	
 }
