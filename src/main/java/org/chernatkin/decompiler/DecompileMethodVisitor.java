@@ -1,9 +1,17 @@
 package org.chernatkin.decompiler;
 
 import com.sun.codemodel.JMethod;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -13,15 +21,32 @@ import org.objectweb.asm.commons.InstructionAdapter;
 
 public class DecompileMethodVisitor extends InstructionAdapter {
 
+	private static final String OPEN_BLOCK = "{"; 
+	
+	private static final String CLOSE_BLOCK = "}"; 
+	
 	private final JMethod method;
 	
 	private final Deque<StackElement> stack = new LinkedList<>();
+	
+	private final Map<String, List<String>> labels = new HashMap<>();
+	
+	private final Set<String> visitedLabels = new HashSet<>();
 	
 	public DecompileMethodVisitor(final JMethod method) {
 		super(new MethodVisitor(Opcodes.ASM5) {});
 		this.method = method;
 	}
 
+	private void addToLabel(Label label, String value){
+		List<String> values = labels.get(label.toString());
+		if(values == null){
+			values = new ArrayList<>();
+			labels.put(label.toString(), values);
+		}
+		values.add(value);
+	}
+	
 	@Override
 	public void nop() {
 		method.body().directStatement("//nop");
@@ -184,366 +209,587 @@ public class DecompileMethodVisitor extends InstructionAdapter {
 
 	@Override
 	public void dup2X2() {
+		method.body().directStatement("//dup2X2");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		if(value1.isCategory2() && value2.isCategory2()){
+			stack.push(value1);
+			stack.push(value2);
+			stack.push(value1);
+			return;
+		}
 		
+		final StackElement value3 = stack.pop();
+		if(!value1.isCategory2() && !value2.isCategory2() && value3.isCategory2()){
+			stack.push(value2);
+			stack.push(value1);
+			stack.push(value3);
+			stack.push(value2);
+			stack.push(value1);
+			return;
+		}
+		else if(value1.isCategory2() && !value2.isCategory2() && !value3.isCategory2()){
+			stack.push(value1);
+			stack.push(value3);
+			stack.push(value2);
+			stack.push(value1);
+			return;
+		}
+		
+		final StackElement value4 = stack.pop();
+		stack.push(value2);
+		stack.push(value1);
+		stack.push(value4);
+		stack.push(value3);
+		stack.push(value2);
+		stack.push(value1);
 	}
 
 	@Override
 	public void swap() {
-		// TODO Auto-generated method stub
-		super.swap();
+		method.body().directStatement("//swap");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(value1);
+		stack.push(value2);
 	}
 
 	@Override
 	public void add(Type type) {
-		// TODO Auto-generated method stub
-		super.add(type);
+		method.body().directStatement("//add");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " + " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void sub(Type type) {
-		// TODO Auto-generated method stub
-		super.sub(type);
+		method.body().directStatement("//sub");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " - " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void mul(Type type) {
-		// TODO Auto-generated method stub
-		super.mul(type);
+		method.body().directStatement("//mul");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " * " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void div(Type type) {
-		// TODO Auto-generated method stub
-		super.div(type);
+		method.body().directStatement("//div");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " / " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void rem(Type type) {
-		// TODO Auto-generated method stub
-		super.rem(type);
+		method.body().directStatement("//rem");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " % " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void neg(Type type) {
-		// TODO Auto-generated method stub
-		super.neg(type);
+		method.body().directStatement("//neg");
+		final StackElement value1 = stack.pop();
+		stack.push(new StackElement("(-" + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void shl(Type type) {
-		// TODO Auto-generated method stub
-		super.shl(type);
+		method.body().directStatement("//shl");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " << " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void shr(Type type) {
-		// TODO Auto-generated method stub
-		super.shr(type);
+		method.body().directStatement("//shr");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " >> " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void ushr(Type type) {
-		// TODO Auto-generated method stub
-		super.ushr(type);
+		method.body().directStatement("//ushr");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " >>> " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void and(Type type) {
-		// TODO Auto-generated method stub
-		super.and(type);
+		method.body().directStatement("//and");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " & " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void or(Type type) {
-		// TODO Auto-generated method stub
-		super.or(type);
+		method.body().directStatement("//or");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " | " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void xor(Type type) {
-		// TODO Auto-generated method stub
-		super.xor(type);
+		method.body().directStatement("//xor");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " ^ " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void iinc(int var, int increment) {
-		// TODO Auto-generated method stub
-		super.iinc(var, increment);
+		method.body().directStatement("//iinc var " + var + " increment " + increment);
+		method.body().directStatement("var" + var + " += " + increment + ";");
 	}
 
 	@Override
 	public void cast(Type from, Type to) {
-		// TODO Auto-generated method stub
-		super.cast(from, to);
+		method.body().directStatement("//cast from " + from + " to " + to);
+		stack.push(new StackElement("(" + to.getClass().getSimpleName() + ")" + stack.pop().getValue(), to.getClass()));
 	}
 
 	@Override
 	public void lcmp() {
-		// TODO Auto-generated method stub
-		super.lcmp();
+		method.body().directStatement("//lcmp");
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " > " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void cmpl(Type type) {
-		// TODO Auto-generated method stub
-		super.cmpl(type);
+		method.body().directStatement("//cmpl type " + type);
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " > " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void cmpg(Type type) {
-		// TODO Auto-generated method stub
-		super.cmpg(type);
+		method.body().directStatement("//cmpg type " + type);
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		stack.push(new StackElement("(" + value2.getValue() + " > " + value1.getValue() + ")", Integer.class));
 	}
 
 	@Override
 	public void ifeq(Label label) {
-		// TODO Auto-generated method stub
-		super.ifeq(label);
+		method.body().directStatement("//ifeq label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " == " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " == 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifne(Label label) {
-		// TODO Auto-generated method stub
-		super.ifne(label);
+		method.body().directStatement("//ifne label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " != " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " != 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void iflt(Label label) {
-		// TODO Auto-generated method stub
-		super.iflt(label);
+		method.body().directStatement("//iflt label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " < " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " < 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifge(Label label) {
-		// TODO Auto-generated method stub
-		super.ifge(label);
+		method.body().directStatement("//ifge label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " >= " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " >= 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifgt(Label label) {
-		// TODO Auto-generated method stub
-		super.ifgt(label);
+		method.body().directStatement("//ifgt label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " > " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " > 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifle(Label label) {
-		// TODO Auto-generated method stub
-		super.ifle(label);
+		method.body().directStatement("//ifle label " + label.toString());
+		final StackElement value = stack.pop();
+		
+		if(value instanceof CmpStackElement){
+			final CmpStackElement cmpValue = (CmpStackElement)value;
+			method.body().directStatement("if(" + cmpValue.getValue1() + " <= " + cmpValue.getValue2() + ") {");
+		}
+		else{
+			method.body().directStatement("if(" + value.getValue() + " <= 0) {");
+		}
+		
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmpeq(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmpeq(label);
+		method.body().directStatement("//ificmpeq label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " == " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmpne(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmpne(label);
+		method.body().directStatement("//ificmpeq label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " == " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmplt(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmplt(label);
+		method.body().directStatement("//ificmplt label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " < " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmpge(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmpge(label);
+		method.body().directStatement("//ificmpge label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " >= " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmpgt(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmpgt(label);
+		method.body().directStatement("//ificmpgt label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " > " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ificmple(Label label) {
-		// TODO Auto-generated method stub
-		super.ificmple(label);
+		method.body().directStatement("//ificmple label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " <= " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifacmpeq(Label label) {
-		// TODO Auto-generated method stub
-		super.ifacmpeq(label);
+		method.body().directStatement("//ifacmpeq label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " == " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifacmpne(Label label) {
-		// TODO Auto-generated method stub
-		super.ifacmpne(label);
+		method.body().directStatement("//ifacmpne label " + label.toString());
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		
+		method.body().directStatement("if(" + value2.getValue() + " != " + value1.getValue() + ") {");
+
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void goTo(Label label) {
-		// TODO Auto-generated method stub
-		super.goTo(label);
+		method.body().directStatement("//goTo label " + label.toString());
+		
+		if(visitedLabels.contains(label.toString())){
+			addToLabel(label, CLOSE_BLOCK);
+		}
+		else{
+			addToLabel(label, OPEN_BLOCK);
+		}
 	}
 
 	@Override
 	public void jsr(Label label) {
-		// TODO Auto-generated method stub
-		super.jsr(label);
+		method.body().directStatement("//jsr label " + label.toString());
+		
+		stack.push(new StackElement(label.toString(), Label.class));
 	}
 
 	@Override
 	public void ret(int var) {
-		// TODO Auto-generated method stub
-		super.ret(var);
+		method.body().directStatement("//ret var " + var);
+		
+		method.body().directStatement("return var" + var + ';');
 	}
 
 	@Override
 	public void tableswitch(int min, int max, Label dflt, Label... labels) {
-		// TODO Auto-generated method stub
-		super.tableswitch(min, max, dflt, labels);
+		method.body().directStatement("//tableswitch min " + min + ", max " + max + ", dflt " + dflt + ", labels " + Arrays.toString(labels));
 	}
 
 	@Override
 	public void lookupswitch(Label dflt, int[] keys, Label[] labels) {
-		// TODO Auto-generated method stub
-		super.lookupswitch(dflt, keys, labels);
+		method.body().directStatement("//tableswitch keys " + Arrays.toString(keys) + ", dflt " + dflt + ", labels " + Arrays.toString(labels));
 	}
 
 	@Override
 	public void areturn(Type t) {
-		// TODO Auto-generated method stub
-		super.areturn(t);
+		method.body().directStatement("//areturn type " + t);
+		
+		method.body().directStatement("return " + stack.pop().getValue() + ';');
 	}
 
 	@Override
 	public void getstatic(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.getstatic(owner, name, desc);
+		method.body().directStatement("//getstatic owner " + owner + ", name " + name + ", desc " + desc);
+		
+		stack.push(new StackElement(owner + '.' + name, Object.class));
 	}
 
 	@Override
 	public void putstatic(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.putstatic(owner, name, desc);
+		method.body().directStatement("//putstatic owner " + owner + ", name " + name + ", desc " + desc);
+		
+		method.body().directStatement(owner + '.' + name + " = " + stack.pop().getValue() + ';');
 	}
 
 	@Override
 	public void getfield(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.getfield(owner, name, desc);
+		method.body().directStatement("//getfield owner " + owner + ", name " + name + ", desc " + desc);
+		
+		stack.push(new StackElement(stack.pop().getValue() + "." + name, Object.class));
 	}
 
 	@Override
 	public void putfield(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.putfield(owner, name, desc);
+		method.body().directStatement("//putfield owner " + owner + ", name " + name + ", desc " + desc);
+		
+		final StackElement value1 = stack.pop();
+		final StackElement value2 = stack.pop();
+		method.body().directStatement(value2.getValue() + "." + name + " = " + value1.getValue() + ';');
 	}
 
 	@Override
 	public void invokevirtual(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.invokevirtual(owner, name, desc);
+		method.body().directStatement("//invokevirtual owner " + owner + ", name " + name + ", desc " + desc);
+		
+		method.body().directStatement(owner + "." + name + "(...)" + ';');
 	}
 
 	@Override
 	public void invokespecial(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.invokespecial(owner, name, desc);
+		method.body().directStatement("//invokespecial owner " + owner + ", name " + name + ", desc " + desc);
+		
+		method.body().directStatement(owner + "." + name + "(...)" + ';');
 	}
 
 	@Override
 	public void invokestatic(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.invokestatic(owner, name, desc);
+		method.body().directStatement("//invokestatic owner " + owner + ", name " + name + ", desc " + desc);
+		
+		method.body().directStatement(owner + "." + name + "(...)" + ';');
 	}
 
 	@Override
 	public void invokeinterface(String owner, String name, String desc) {
-		// TODO Auto-generated method stub
-		super.invokeinterface(owner, name, desc);
+		method.body().directStatement("//invokeinterface owner " + owner + ", name " + name + ", desc " + desc);
+		
+		method.body().directStatement(owner + "." + name + "(...)" + ';');
 	}
 
 	@Override
 	public void invokedynamic(String name, String desc, Handle bsm,	Object[] bsmArgs) {
-		// TODO Auto-generated method stub
-		super.invokedynamic(name, desc, bsm, bsmArgs);
+		method.body().directStatement("//invokedynamic name " + name + ", desc " + desc + ", bsm " + bsm + ", bsmArgs " + Arrays.toString(bsmArgs));
+		
+		method.body().directStatement(bsm.toString() + ';');
 	}
 
 	@Override
 	public void anew(Type type) {
-		// TODO Auto-generated method stub
-		super.anew(type);
+		method.body().directStatement("//anew type " + type);
+		
+		stack.push(new StackElement("new " + type.getClassName() + "()", Object.class));
 	}
 
 	@Override
 	public void newarray(Type type) {
-		// TODO Auto-generated method stub
-		super.newarray(type);
+		method.body().directStatement("//newarray type " + type);
+		
+		stack.push(new StackElement("new " + type.getClassName() + "[" + stack.pop().getValue() + "]", Object.class));
 	}
 
 	@Override
 	public void arraylength() {
-		// TODO Auto-generated method stub
-		super.arraylength();
+		method.body().directStatement("//arraylength");
+		
+		stack.push(new StackElement(stack.pop().getValue() + ".length", Integer.class));
 	}
 
 	@Override
 	public void athrow() {
-		// TODO Auto-generated method stub
-		super.athrow();
+		method.body().directStatement("//arraylength");
+		
+		method.body().directStatement("throw " + stack.pop().getValue() + ';');
 	}
 
 	@Override
 	public void checkcast(Type type) {
-		// TODO Auto-generated method stub
-		super.checkcast(type);
+		
 	}
 
 	@Override
 	public void instanceOf(Type type) {
-		// TODO Auto-generated method stub
-		super.instanceOf(type);
+		method.body().directStatement("//instanceOf " + type);
+		
+		stack.push(new StackElement(stack.pop().getValue() + " instanceof " + type.getClassName(), Integer.class));
 	}
 
 	@Override
 	public void monitorenter() {
-		// TODO Auto-generated method stub
-		super.monitorenter();
+		method.body().directStatement("//monitorenter");
+		
+		method.body().directStatement("synchronized(" + stack.pop().getValue() + "){");
 	}
 
 	@Override
 	public void monitorexit() {
-		// TODO Auto-generated method stub
-		super.monitorexit();
+		method.body().directStatement("//monitorexit");
+		
+		method.body().directStatement("}");
 	}
 
 	@Override
 	public void multianewarray(String desc, int dims) {
-		// TODO Auto-generated method stub
-		super.multianewarray(desc, dims);
+		method.body().directStatement("//multianewarray desc " + desc + ", dims " + dims);
+		
+		stack.push(new StackElement("new " + desc + "[]", Object.class));
 	}
 
 	@Override
 	public void ifnull(Label label) {
-		// TODO Auto-generated method stub
-		super.ifnull(label);
+		method.body().directStatement("//ifnull label " + label);
+		
+		method.body().directStatement("if(" + stack.pop().getValue() + " != null){");
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
 	@Override
 	public void ifnonnull(Label label) {
-		// TODO Auto-generated method stub
-		super.ifnonnull(label);
+		method.body().directStatement("//ifnonnull label " + label);
+		
+		method.body().directStatement("if(" + stack.pop().getValue() + " == null){");
+		addToLabel(label, CLOSE_BLOCK);
 	}
 
+	
+
 	@Override
-	public void mark(Label label) {
-		// TODO Auto-generated method stub
-		super.mark(label);
+	public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+		method.body().directStatement("//tryCatchBlock start " + start + ", end " + end + ", handler " + handler + ", type");
+		
+		addToLabel(start, "try{");
+		addToLabel(end, "}");
+		addToLabel(handler, "catch(" + type + "){");
 	}
 
 	@Override
 	public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
 		method.body().directStatement("//frame type: " + type + ", nlocal: " + nLocal + ", local: " + Arrays.toString(local) + ", nStack: " + nStack + ", stack: " + Arrays.toString(stack));
 	}
+
+	@Override
+	public void visitLabel(Label label) {
+		method.body().directStatement("//label " + label);
+		
+		visitedLabels.add(label.toString());
+		if(labels.containsKey(label.toString())){
+			for(String brace : labels.get(label.toString())){
+				method.body().directStatement(brace);
+			}
+		}
+	}
+
+	@Override
+	public void visitLineNumber(int line, Label start) {
+	}
+
+	/*@Override
+	public void visitJumpInsn(int opcode, Label label) {
+		method.body().directStatement("//jump " + label);
+	}*/
+	
 	
 }
